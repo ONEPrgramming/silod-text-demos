@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style>
+	
+
+#body--ready{
+	margin: 0;
+	overflow-x:hidden; 
+  background: -webkit-linear-gradient(top,rgb(203, 235, 219) 0%, rgb(55, 148, 192) 120%);  /*渐变*/
+  background:linear-gradient( top,rgb(203, 235, 219) 0%, rgb(55, 148, 192) 120%); 
+}
+  
+	</style>
+</head>
+<body id="body--ready">
+	<canvas id = 'canvas'  style="color:#000;"> 你的浏览器不支持HTML  canvas</canvas>
+</body>
+</html>
+<script>
+	(function(w){
+		function $(name){
+			return document.getElementById(name);
+		}
+		//主函数
+		function main(){
+			var g_y = w.innerHeight;
+		   var g_x = w.innerWidth;
+	       var a = $('body--ready');
+	        a.style.height = g_y+'px'; 
+	      var data = wherecans.getImageData('Sofewares');
+	      rand.jumps(data);
+	        Draw.loop(function(){
+	      	rand.reder();
+	      });
+	    }
+		var Draw = (function(){
+			var loopan = w.requestAnimationFrame  ||
+                     w.webkitRequestAnimationFrame  ||
+                     w.mozRequestAnimationFrame  ||
+                     w.oRequestAnimationFrame  ||
+                     w.msRequestAnimationFrame ||
+                     function(callback) {
+                       w.setTimeout(callback, 1000 / 60);
+            },
+            readfn;
+            return {
+            	loop:function(fn){
+            		readfn = readfn? readfn :fn;
+            		wherecans.clrarImage();
+            		readfn();
+            		loopan.call(w,this.loop.bind(this));
+            	}
+            }
+		}());
+		
+		//设置画布
+		var wherecans = (function(){
+			var can = $('canvas'),
+		    cantext = can.getContext('2d'),
+			fontsize = 300, 
+			casSize = 25;
+			can.width = Math.floor(w.innerWidth/casSize)*casSize;  
+      	    can.height = Math.floor(w.innerHeight/casSize)*casSize;
+      	    cantext.fillStyle = '#fff';
+            cantext.textBaseline = 'middle';
+            cantext.textAlign = 'center';	
+            //自适应字体大小
+		    function fontsizes(){
+      	   	          var a = Math.min(fontsize,
+                            (can.width / cantext.measureText(name).width) *  fontsize, 
+                            (can.height / fontsize) * fontsize);    
+      	   	          cantext.font = 'bold' +' ' +a+'px' +' '+ '微软雅黑';
+      	     }
+			 function fillFont(name){
+			    	fontsizes();
+				    cantext.fillText(name,can.width/2,can.height/2);
+			    }
+      	     function imageData(){
+      	     	var sd = cantext.getImageData(0,0,can.width,can.height).data;
+      	     	 var nums = 10, //像素点间隔
+			     dots = [],
+			     x = 0,
+			     y = 0;
+			     for(i =0;i<sd.length;i+=(4*nums)){
+			     	if(x>=wherecans.getArea().x-1){
+					     x = 0;
+					     y +=nums;
+					     i += nums*wherecans.getArea().x*4;
+				     }
+				     if(sd[i+3]>0){
+					     dots.push(new cache({
+						     x :x,
+						     y :y
+					     }));
+				     }
+				     x += nums;
+			     }
+			     return dots;
+      	     }
+			return {
+				clrarImage:function(){
+					cantext.clearRect(0, 0, can.width, can.height);
+				},
+				//画圆
+			   drawCricle:function(p){
+				    cantext.fillStyle = 'rgba(' + 255 + ',' +  + 255 + ',' + 255 + ',' + 1 + ')';
+                    cantext.beginPath();
+                    cantext.arc(p.x,p.y,5, 0, 2 * Math.PI, true);
+                    cantext.closePath();
+                    cantext.fill();
+			     },
+				//返回画布大小
+				getArea:function(){
+					return {x:can.width,y:can.height};
+				},
+			    getImageData:function(name){
+			    	fillFont(name)
+			    	return imageData();
+			    }	
+			};
+		}());
+		//浮动
+		var rand = (function(){
+			var dott = [],
+			new_y = 0,
+			new_x = 0,
+			i = 0,
+			d = 0,
+			a = wherecans.getArea();
+			return {
+				jumps:function(dotss){
+				     while(i< dotss.length){
+					     d = Math.floor(dotss.length*Math.random());
+					     dott.push(new point(a.x/2,a.y/2));
+					     dott[i].move(new cache({
+						     z:Math.random()*4,
+						     a:1,
+						     h:18
+					     }));	
+					     //字体移动
+					     dott[i].move(new cache({
+						     x:dotss[i].x,
+						     y:dotss[i].y,
+						     z:Math.random()*4,
+						     a:1,
+						     h:0
+					     }));
+					     //循环
+					     dotss = dotss.slice(0, d).concat(dotss.slice(d+1));  //-1
+					     i++;
+				     }
+			    },
+			    reder:function(){
+			    	for(var e= 0;e<dott.length;e++){
+			    		//console.log(e)
+			    		dott[e].reders();
+			    	}
+			    }
+			}
+		}());
+		var point = function(x,y){
+			this.p = new cache({x:x,y:y,h:0});
+			this.a = 1;
+			this.c = new colors(255,255,255,1);
+			this.z = 3;
+			this.t = this.clone();
+			this.ca = [],
+			this.e = 0.07,
+			this.h = 0;
+		};
+		point.prototype = {
+			clone:function(){
+				return new cache({
+					x:this.x,
+					y:this.y,
+					a:this.a,
+					z:this.z
+				});
+			},
+			move:function(obj){
+					this.ca.push(obj);
+			},
+			distanceTo:function(n){
+				var dx = this.p.x - n.x,
+                dy = this.p.y - n.y,
+                d = Math.sqrt(dx * dx + dy * dy);
+                return [dx,dy,d]; 
+			},
+			san:function(n){
+				var detail = this.distanceTo(n);
+				dx = detail[0],
+				dy = detail[1],
+				d = detail[2],
+				e = this.e*d;
+			
+                if (d > 1) {  
+                    this.p.x -= ((dx / d) * e);
+                    this.p.y -= ((dy / d) * e);
+                  } else {
+                    if (this.p.h > 0) {
+                      this.p.h--;
+                    } else {
+                      return true;
+                    }
+                  }
+                  return false;
+			},
+			updata:function(){
+				if(this.san(this.t)){
+     			    s = this.ca.shift();	
+				    if(s){
+					    this.t.x = s.x || this.p.x;
+					    this.t.y = s.y || this.p.y;
+					    this.t.z = s.z || this.p.z,
+					    this.t.h = s.h || 0;
+				    }
+				    this.p.x -= Math.sin(Math.random() *3.142);
+                    this.p.y -= Math.sin(Math.random() * 3.142);
+               }
+			},
+			drawcricles:function(){
+					wherecans.drawCricle(this.p);
+			},
+			reders:function(){
+				this.updata();
+				this.drawcricles();
+			}
+		}
+		var colors = function(r,g,b,a){
+			this.r = r,
+			this.g = g,
+			this.b = b,
+			this.a = a;
+		}
+		colors.prototype ={
+			getcolor:function(){
+				return 'rgba(' + this.r + ',' +  + this.g + ',' + this.b + ',' + this.a + ')';
+			}
+		}
+		//数据缓存
+		var cache =function(args) {
+			this.x =args.x,
+			this.y =args.y,
+			this.z = args.z,
+			this.a = args.a,
+			this.h = args.h   //层次
+		}
+		main();
+	})(window);
+</script>
